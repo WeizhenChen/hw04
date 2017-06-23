@@ -140,13 +140,13 @@
 
         });
 
-        //2.
+        //2.====================================================================================
         var h2 = 600;
         var p = 90;
 
         svg(w, h2, "bar-chart", "2. 2D散佈圖 3.製作行業別下拉式選單 4.加入提示框");
         borber("bar-chart");
-        axis();
+        axis("bar-chart");
 
         //3. 用d3讀取csv
         d3.csv("invoice.csv", mid, function(dataSet) {
@@ -154,6 +154,11 @@
             bind(dataSet);
             render(dataSet);
             btnlist(dataSet);
+
+            //3.放在2.的下面====================================================================================
+            svg(w, h2, "bar-chart-2", "5.台灣癌症發生統計資料");
+            borber("bar-chart-2");
+            axis("bar-chart-2");
 
         });
 
@@ -165,10 +170,10 @@
             return d;
         }
 
-        function axis() {
+        function axis(sid) {
 
-            d3.select("svg#bar-chart").append("g").attr("id", "axisX");
-            d3.select("svg#bar-chart").append("g").attr("id", "axisY");
+            d3.select("svg#"+sid).append("g").attr("class", "axisX");
+            d3.select("svg#"+sid).append("g").attr("class", "axisY");
 
         }
 
@@ -208,7 +213,7 @@
             var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 
             d3.select("svg#bar-chart")
-                .select("g#axisX")
+                .select("g.axisX")
                 .attr("class", "axis")
                 .attr("transform", "translate(0," + (h2 - p + 12) + ")")
                 .call(xAxis);
@@ -216,7 +221,7 @@
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
             d3.select("svg#bar-chart")
-                .select("g#axisY")
+                .select("g.axisY")
                 .attr("class", "axis")
                 .attr("transform", "translate(" + (p - 10) + ",0)")
                 .call(yAxis);
