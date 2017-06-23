@@ -55,50 +55,288 @@
     </div>
 
     <script>
+        var w = 900;
+        var h = 300;
+
         //1.====================================================================================
         d3.json("invoice-taipei.json", function(data) {
 
-            svg(700, 300, "bar-chart-3", "1.加上 x方向座標軸");
-            borber(700, 300, "bar-chart-3");
-            var body = d3.select("svg#bar-chart-3");
+            svg(w, h, "bar-chart-3", "1.加上 x方向座標軸");
+            borber("bar-chart-3");
 
             var f_data = data.filter(function(d) {
                 return d.amount > 1000000000 && d.cid == "A" && d.date.substr(0, 6) == "2016/8";
             });
 
-            for (var i = 0; i < f_data.length; i++) {
-                body.append("text")
+            bind_2(f_data);
+            render_2(f_data);
+
+            function bind_2(dataSet) {
+                var selection = d3.select("svg#bar-chart-3")
+                    .selectAll("text.chart-data")
+                    .data(dataSet);
+
+                selection.enter().append("text").attr("class", "chart-data");
+                selection.exit().remove();
+
+                var selection_2 = d3.select("svg#bar-chart-3")
+                    .selectAll("rect.chart-data")
+                    .data(dataSet);
+
+                selection_2.enter().append("rect").attr("class", "chart-data");
+                selection_2.exit().remove();
+            }
+
+            function render_2(dataSet) {
+
+                var xScale = d3.scale.linear()
+                    .domain([0, d3.max(dataSet, function(d) {
+                        return d.amount;
+                    })])
+                    .range([0, 300]);
+
+                var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(5)
+                    .tickFormat(function(d) {
+                        return Math.floor(d / 1000000000) + "G";
+                    });
+
+                d3.select("svg#bar-chart-3")
+                    .append("g")
+                    .attr({
+                        class: "axis",
+                        transform: "translate(250,250)"
+                    })
+                    .call(xAxis);
+
+                //6. 建立render()繪圖
+                d3.select("svg#bar-chart-3")
+                    .selectAll("text.chart-data")
                     .attr({
                         x: 20,
-                        y: (20 * i) + 35,
+                        y: function(d, i) {
+                            return (20 * i) + 35;
+                        },
                         "font-size": "13px"
                     })
-                    .text(f_data[i].industry);
-                body.append("rect")
+                    .text(function(d) {
+                        return d.industry;
+                    });
+
+                d3.select("svg#bar-chart-3")
+                    .selectAll("rect.chart-data")
                     .attr({
                         x: 250,
-                        y: (20 * i) + 22,
-                        width: f_data[i].amount / 100000000,
+                        y: function(d, i) {
+                            return (20 * i) + 22;
+                        },
+                        width: function(d) {
+                            return xScale(d.amount);
+                        },
                         height: 18,
                         fill: "red"
                     });
+
             }
-
-            var xScale = d3.scale.linear()
-                .domain([d3.min(f_data, function(d) {
-                    return d.amount;
-                }), d3.max(f_data, function(d) {
-                    return d.amount;
-                })])
-                .range([0, 300]);
-
-            var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(5).tickFormat(function(d) {
-                return Math.floor(d / 1000000000) + "G";
-            });
-            d3.select("#svgs1").append("g").attr("class", "xaxis").attr("transform", "translate(250,250)").call(xAxis);
 
         });
 
+        //2.
+        var h2 = 600;
+        var p = 90;
+
+        svg(w, h2, "bar-chart", "2. 2D散佈圖 3.製作行業別下拉式選單 4.加入提示框");
+        borber("bar-chart");
+        axis();
+
+        //3. 用d3讀取csv
+        d3.csv("invoice.csv", mid, function(dataSet) {
+
+            bind(dataSet);
+            render(dataSet);
+            btnlist(dataSet);
+
+        });
+
+        function mid(d) {
+
+            d.number = +d.number;
+            d.amount = +d.amount;
+
+            return d;
+        }
+
+        function axis() {
+
+            d3.select("svg#bar-chart").append("g").attr("id", "axisX");
+            d3.select("svg#bar-chart").append("g").attr("id", "axisY");
+
+        }
+
+        //4. 建立bind()
+        function bind(dataSet) {
+
+            var selection = d3.select("svg#bar-chart")
+                .selectAll("circle")
+                .data(dataSet);
+
+            selection.enter().append("circle");
+            selection.exit().remove();
+
+        }
+
+        function render(dataSet) {
+
+            //5. 定義xScale,yScale,rScale, fScale比例尺(range目的在決定在svg上位置)
+            var xScale = d3.time.scale()
+                .domain([new Date("2013-01-01"), new Date("2016-08-01")])
+                .range([p, w - p]);
+            var yScale = d3.scale.linear()
+                .domain([0, d3.max(dataSet, function(d) {
+                    return d.number;
+                })])
+                .range([h2 - p, p]);
+            var rScale = d3.scale.linear()
+                .domain([d3.min(dataSet, function(d) {
+                    return d.amount;
+                }), d3.max(dataSet, function(d) {
+                    return d.amount;
+                })])
+                .range([5, 30]);
+
+            var fScale = d3.scale.category20();
+
+            var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+            d3.select("svg#bar-chart")
+                .select("g#axisX")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + (h2 - p + 12) + ")")
+                .call(xAxis);
+
+            var yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+            d3.select("svg#bar-chart")
+                .select("g#axisY")
+                .attr("class", "axis")
+                .attr("transform", "translate(" + (p - 10) + ",0)")
+                .call(yAxis);
+
+            //6. 建立render()繪圖
+            d3.selectAll("circle")
+                .attr({
+                    cx: function(d) {
+                        return xScale(new Date(d.date));
+                    },
+                    cy: function(d) {
+                        return yScale(d.number);
+                    },
+                    r: function(d) {
+                        return rScale(d.amount);
+                    },
+                    fill: function(d) {
+                        return fScale(d.city);
+                    }
+                })
+                .on("mouseover", function(d) {
+                    var posX = +d3.select(this).attr("cx") + 20;
+                    var posY = +d3.select(this).attr("cy") + 20;
+
+                    d3.select("div#tooltip")
+                        .classed("hidden", false)
+                        .style({
+                            top: posY + "px",
+                            left: posX + "px"
+                        });
+
+                    d3.select("strong#city")
+                        .text(d.city);
+
+                    d3.select("p#industry")
+                        .text(d.industry);
+                })
+                .on("mouseout", function(d) {
+                    d3.select("div#tooltip")
+                        .classed("hidden", true);
+                })
+
+        }
+
+        function btnlist(dataSet) {
+            var industryArr = dataSet.map(function(d) {
+                return d.industry;
+            });
+
+            //console.log(industryArr);
+
+            var uIndustryArr = unique(industryArr);
+            //console.log(uIndustryArr);
+
+            var fIndustryArr = uIndustryArr.filter(function(d) {
+                return d != '';
+            });
+
+            //bind input================================================
+            var selection = d3.select("body")
+                .append("select")
+
+                .selectAll("option")
+                .data(fIndustryArr);
+
+            //selection.enter().append("option");
+            //selection.exit().remove();
+
+            //render =====================================================
+            selection.enter()
+                .append("option")
+                .attr({
+                    value: function(d) {
+                        return d;
+                    }
+                })
+                .text(function(d) {
+                    return d;
+                });
+
+            d3.select("select")
+                .insert("option", ":first-child")
+                .attr("value", "顯示全部")
+                .text("顯示全部");
+
+            d3.select("select")
+                .on("change", function(d) {
+                    var value = d3.select("select").property("value");
+                    update(value);
+                })
+
+            function unique(array) {
+                var n = [];
+
+                //去看array中每個元素，如果沒出現過就加到n中      
+                for (var i = 0; i < array.length; i++) {
+                    if (n.indexOf(array[i]) == -1) {
+                        n.push(array[i]);
+                    }
+                }
+
+                return n;
+            }
+
+            function update(industryName) {
+                //過濾行業別符合者
+                if (industryName == "顯示全部") {
+                    var newDataSet = dataSet;
+                } else {
+                    var newDataSet = dataSet.filter(function(d) {
+                        return d.industry == industryName;
+                    });
+                }
+                //console.log(newDataSet);
+
+                //重新整理bind,render
+                bind(newDataSet);
+                render(newDataSet);
+            }
+        }
 
         //function
         function svg(w, h, sid, title) {
@@ -119,7 +357,7 @@
 
         }
 
-        function borber(w, h, sid) {
+        function borber(sid) {
 
             //框線
             d3.select("body")
@@ -129,8 +367,8 @@
                 .attr({
                     x: 0,
                     y: 0,
-                    height: h,
-                    width: w,
+                    height: "100%",
+                    width: "100%",
                     class: "border",
                     fill: "white"
                 })
