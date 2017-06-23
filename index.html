@@ -29,8 +29,6 @@
         
         #tooltip {
             position: absolute;
-            /* left: 20px; */
-            /* top:  100px; */
             background: #fff;
             width: 150px;
             height: auto;
@@ -43,7 +41,6 @@
         #tooltip.hidden {
             display: none;
         }
-
     </style>
 </head>
 
@@ -54,6 +51,19 @@
         <p id="industry"></p>
     </div>
 
+    <div class="title">1.加上 x方向座標軸</div>
+    <svg id="bar-chart-3"></svg>
+    <div class="title">2. 2D散佈圖 3.製作行業別下拉式選單 4.加入提示框</div>
+    <select id="chart"></select><br>
+    <svg id="bar-chart"></svg>
+    <div class="title">5.台灣癌症發生統計資料</div>
+    <select id="chart-2"></select><br>
+    <svg id="bar-chart-2"></svg>
+<!--
+    <div class="title"></div>
+    <svg id="bar-chart-4"></svg>
+-->
+
     <script>
         var w = 900;
         var h = 300;
@@ -61,7 +71,7 @@
         //1.====================================================================================
         d3.json("invoice-taipei.json", function(data) {
 
-            svg(w, h, "bar-chart-3", "1.加上 x方向座標軸");
+            svg(w, h, "bar-chart-3");
             borber("bar-chart-3");
 
             var f_data = data.filter(function(d) {
@@ -144,7 +154,7 @@
         var h2 = 600;
         var p = 90;
 
-        svg(w, h2, "bar-chart", "2. 2D散佈圖 3.製作行業別下拉式選單 4.加入提示框");
+        svg(w, h2, "bar-chart");
         borber("bar-chart");
         axis("bar-chart");
 
@@ -155,11 +165,6 @@
             render(dataSet);
             btnlist(dataSet);
 
-            //3.放在2.的下面====================================================================================
-            svg(w, h2, "bar-chart-2", "5.台灣癌症發生統計資料");
-            borber("bar-chart-2");
-            axis("bar-chart-2");
-
         });
 
         function mid(d) {
@@ -168,13 +173,6 @@
             d.amount = +d.amount;
 
             return d;
-        }
-
-        function axis(sid) {
-
-            d3.select("svg#"+sid).append("g").attr("class", "axisX");
-            d3.select("svg#"+sid).append("g").attr("class", "axisY");
-
         }
 
         //4. 建立bind()
@@ -227,7 +225,8 @@
                 .call(yAxis);
 
             //6. 建立render()繪圖
-            d3.selectAll("circle")
+            d3.select("svg#bar-chart")
+                .selectAll("circle")
                 .attr({
                     cx: function(d) {
                         return xScale(new Date(d.date));
@@ -267,6 +266,204 @@
         }
 
         function btnlist(dataSet) {
+            var industryArr = dataSet.map(function(d) {
+                return d.industry;
+            });
+
+            //console.log(industryArr);
+
+            var uIndustryArr = unique(industryArr);
+            //console.log(uIndustryArr);
+
+            var fIndustryArr = uIndustryArr.filter(function(d) {
+                return d != '';
+            });
+
+            //bind input================================================
+            var selection = d3.select("body")
+                .select("select#chart")
+                .selectAll("option")
+                .data(fIndustryArr);
+
+            //selection.enter().append("option");
+            //selection.exit().remove();
+
+            //render =====================================================
+            selection.enter()
+                .append("option")
+                .attr({
+                    value: function(d) {
+                        return d;
+                    }
+                })
+                .text(function(d) {
+                    return d;
+                });
+
+            d3.select("select#chart")
+                .insert("option", ":first-child")
+                .attr("value", "顯示全部")
+                .text("顯示全部");
+
+            d3.select("select#chart")
+                .on("change", function(d) {
+                    var value = d3.select("select#chart").property("value");
+                    update(value);
+                })
+
+            function unique(array) {
+                var n = [];
+
+                //去看array中每個元素，如果沒出現過就加到n中      
+                for (var i = 0; i < array.length; i++) {
+                    if (n.indexOf(array[i]) == -1) {
+                        n.push(array[i]);
+                    }
+                }
+
+                return n;
+            }
+
+            function update(industryName) {
+                //過濾行業別符合者
+                if (industryName == "顯示全部") {
+                    var newDataSet = dataSet;
+                } else {
+                    var newDataSet = dataSet.filter(function(d) {
+                        return d.industry == industryName;
+                    });
+                }
+                //console.log(newDataSet);
+
+                //重新整理bind,render
+                bind(newDataSet);
+                render(newDataSet);
+            }
+        }
+
+        //3.====================================================================================
+        svg(w, h2, "bar-chart-2");
+        borber("bar-chart-2");
+        axis("bar-chart-2");
+
+        d3.csv("cancer_data.csv", mid_2, function(dataSet) {
+
+            //console.table(dataSet);
+            bind_2(dataSet);
+            render_2(dataSet);
+            btnlist_2(dataSet);
+
+        });
+
+        function mid_2(d) {
+
+            d.count = +d.count;
+            d.avg_age = +d.avg_age;
+            d.mid_avg = +d.mid_avg;
+            d.crude_rate = +d.crude_rate;
+            d.age_rate = +d.age_rate;
+
+            return d;
+        }
+
+        function bind_2(dataSet) {
+
+            var selection_2 = d3.select("svg#bar-chart-2")
+                .selectAll("circle")
+                .data(dataSet);
+
+            selection_2.enter().append("circle")
+                .attr({
+                    cx: 10,
+                    cy: 10,
+                    r: 5,
+                    fill: "black"
+                });
+            selection_2.exit().remove();
+
+        }
+
+        function render_2(dataSet) {
+
+            var xScale = d3.time.scale()
+                .domain([new Date(d3.min(dataSet, function(d) {
+                    return new Date(d.date);
+                })), new Date(d3.max(dataSet, function(d) {
+                    return new Date(d.date);
+                }))])
+                .range([p, w - p]);
+            var yScale = d3.scale.linear()
+                .domain([0, d3.max(dataSet, function(d) {
+                    return d.avg_age;
+                })])
+                .range([h2 - p, p]);
+            var rScale = d3.scale.linear()
+                .domain([d3.min(dataSet, function(d) {
+                    return d.count;
+                }), d3.max(dataSet, function(d) {
+                    return d.count;
+                })])
+                .range([5, 30]);
+
+            var fScale = d3.scale.category20();
+
+            var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+            d3.select("svg#bar-chart-2")
+                .select("g.axisX")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + (h2 - p + 12) + ")")
+                .call(xAxis);
+
+            var yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+            d3.select("svg#bar-chart-2")
+                .select("g.axisY")
+                .attr("class", "axis")
+                .attr("transform", "translate(" + (p - 10) + ",0)")
+                .call(yAxis);
+
+            d3.select("svg#bar-chart-2")
+                .selectAll("circle")
+                .attr({
+                    cx: function(d) {
+                        return xScale(new Date(d.date));
+                    },
+                    cy: function(d) {
+                        return yScale(d.avg_age);
+                    },
+                    r: function(d) {
+                        return rScale(d.count);
+                    },
+                    fill: function(d) {
+                        return fScale(d.city);
+                    }
+                })
+                .on("mouseover", function(d) {
+                    var posX = +d3.select(this).attr("cx") + 20;
+                    var posY = +d3.select(this).attr("cy") + 20;
+
+                    d3.select("div#tooltip")
+                        .classed("hidden", false)
+                        .style({
+                            top: posY + "px",
+                            left: posX + "px"
+                        });
+
+                    d3.select("strong#city")
+                        .text(d.category);
+
+                    d3.select("p#category")
+                        .text(d.category);
+                })
+                .on("mouseout", function(d) {
+                    d3.select("div#tooltip")
+                        .classed("hidden", true);
+                });
+
+        }
+
+        /*function btnlist_2(dataSet) {
             var industryArr = dataSet.map(function(d) {
                 return d.industry;
             });
@@ -341,24 +538,29 @@
                 bind(newDataSet);
                 render(newDataSet);
             }
-        }
+        }*/
+
+
+
+        /////////////////////////////////////////
 
         //function
-        function svg(w, h, sid, title) {
+        function svg(w, h, sid) {
 
             d3.select("body")
-                .append("div")
-                .classed("title", true)
-                .text(title);
-
-            d3.select("body")
-                .append("svg")
+                .select("svg#" + sid)
                 .attr({
                     width: w,
                     height: h,
-                    id: sid,
                     border: 1
                 });
+
+        }
+
+        function axis(sid) {
+
+            d3.select("svg#" + sid).append("g").attr("class", "axisX");
+            d3.select("svg#" + sid).append("g").attr("class", "axisY");
 
         }
 
@@ -384,7 +586,6 @@
                 });
 
         }
-
     </script>
 
 </body>
