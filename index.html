@@ -41,6 +41,11 @@
         #tooltip.hidden {
             display: none;
         }
+        
+        select{
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 
@@ -49,6 +54,7 @@
     <div id="tooltip" class="hidden">
         <p><strong id="city"></strong></p>
         <p id="industry"></p>
+        <p id="count"></p>
     </div>
 
     <div class="title">1.加上 x方向座標軸</div>
@@ -59,7 +65,7 @@
     <div class="title">5.台灣癌症發生統計資料</div>
     <select id="chart-2"></select><br>
     <svg id="bar-chart-2"></svg>
-<!--
+    <!--
     <div class="title"></div>
     <svg id="bar-chart-4"></svg>
 -->
@@ -243,7 +249,7 @@
                 })
                 .on("mouseover", function(d) {
                     var posX = +d3.select(this).attr("cx") + 20;
-                    var posY = +d3.select(this).attr("cy") + 20;
+                    var posY = +d3.event.pageY;
 
                     d3.select("div#tooltip")
                         .classed("hidden", false)
@@ -303,26 +309,14 @@
             d3.select("select#chart")
                 .insert("option", ":first-child")
                 .attr("value", "顯示全部")
-                .text("顯示全部");
+                .text("顯示全部")
+                .attr("selected", true);
 
             d3.select("select#chart")
                 .on("change", function(d) {
                     var value = d3.select("select#chart").property("value");
                     update(value);
-                })
-
-            function unique(array) {
-                var n = [];
-
-                //去看array中每個元素，如果沒出現過就加到n中      
-                for (var i = 0; i < array.length; i++) {
-                    if (n.indexOf(array[i]) == -1) {
-                        n.push(array[i]);
-                    }
-                }
-
-                return n;
-            }
+                });
 
             function update(industryName) {
                 //過濾行業別符合者
@@ -441,7 +435,7 @@
                 })
                 .on("mouseover", function(d) {
                     var posX = +d3.select(this).attr("cx") + 20;
-                    var posY = +d3.select(this).attr("cy") + 20;
+                    var posY = +d3.event.pageY;
 
                     d3.select("div#tooltip")
                         .classed("hidden", false)
@@ -451,10 +445,13 @@
                         });
 
                     d3.select("strong#city")
+                        .text(d.city);
+
+                    d3.select("p#industry")
                         .text(d.category);
 
-                    d3.select("p#category")
-                        .text(d.category);
+                    d3.select("p#count")
+                        .text("案例數：" + d.count);
                 })
                 .on("mouseout", function(d) {
                     d3.select("div#tooltip")
@@ -463,31 +460,23 @@
 
         }
 
-        /*function btnlist_2(dataSet) {
-            var industryArr = dataSet.map(function(d) {
-                return d.industry;
+        function btnlist_2(dataSet) {
+            var categoryArr = dataSet.map(function(d) {
+                return d.category;
             });
 
-            //console.log(industryArr);
+            var uCategoryArr = unique(categoryArr);
 
-            var uIndustryArr = unique(industryArr);
-            //console.log(uIndustryArr);
-
-            var fIndustryArr = uIndustryArr.filter(function(d) {
+            var fCategoryArr = uCategoryArr.filter(function(d) {
                 return d != '';
             });
 
             //bind input================================================
             var selection = d3.select("body")
-                .append("select")
-
+                .select("select#chart-2")
                 .selectAll("option")
-                .data(fIndustryArr);
+                .data(fCategoryArr);
 
-            //selection.enter().append("option");
-            //selection.exit().remove();
-
-            //render =====================================================
             selection.enter()
                 .append("option")
                 .attr({
@@ -499,46 +488,34 @@
                     return d;
                 });
 
-            d3.select("select")
+            d3.select("select#chart-2")
                 .insert("option", ":first-child")
                 .attr("value", "顯示全部")
-                .text("顯示全部");
+                .text("顯示全部")
+                .attr("selected", true);
 
-            d3.select("select")
+            d3.select("select#chart-2")
                 .on("change", function(d) {
-                    var value = d3.select("select").property("value");
+                    var value = d3.select("select#chart-2").property("value");
                     update(value);
-                })
+                });
 
-            function unique(array) {
-                var n = [];
-
-                //去看array中每個元素，如果沒出現過就加到n中      
-                for (var i = 0; i < array.length; i++) {
-                    if (n.indexOf(array[i]) == -1) {
-                        n.push(array[i]);
-                    }
-                }
-
-                return n;
-            }
-
-            function update(industryName) {
+            function update(categoryName) {
                 //過濾行業別符合者
-                if (industryName == "顯示全部") {
+                if (categoryName == "顯示全部") {
                     var newDataSet = dataSet;
                 } else {
                     var newDataSet = dataSet.filter(function(d) {
-                        return d.industry == industryName;
+                        return d.category == categoryName;
                     });
                 }
                 //console.log(newDataSet);
 
                 //重新整理bind,render
-                bind(newDataSet);
-                render(newDataSet);
+                bind_2(newDataSet);
+                render_2(newDataSet);
             }
-        }*/
+        }
 
 
 
@@ -586,6 +563,20 @@
                 });
 
         }
+
+        function unique(array) {
+            var n = [];
+
+            //去看array中每個元素，如果沒出現過就加到n中      
+            for (var i = 0; i < array.length; i++) {
+                if (n.indexOf(array[i]) == -1) {
+                    n.push(array[i]);
+                }
+            }
+
+            return n;
+        }
+
     </script>
 
 </body>
