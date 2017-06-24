@@ -42,7 +42,7 @@
             display: none;
         }
         
-        select{
+        select {
             margin-bottom: 10px;
         }
 
@@ -65,10 +65,10 @@
     <div class="title">5.台灣癌症發生統計資料</div>
     <select id="chart-2"></select><br>
     <svg id="bar-chart-2"></svg>
-    <!--
-    <div class="title"></div>
+
+    <div class="title">6.實作一個速度函式滑桿 </div>
     <svg id="bar-chart-4"></svg>
--->
+
 
     <script>
         var w = 900;
@@ -456,6 +456,9 @@
                 .on("mouseout", function(d) {
                     d3.select("div#tooltip")
                         .classed("hidden", true);
+
+                    d3.select("p#count")
+                        .text("");
                 });
 
         }
@@ -517,11 +520,95 @@
             }
         }
 
+        //3.====================================================================================
+        var h3 = 340;
 
+        svg(w, h3, "bar-chart-4");
+        borber("bar-chart-4");
 
-        /////////////////////////////////////////
+        var easeArr = ["linear", "quad", "cubic", "sin", "exp", "circle", "elastic", "back", "bounce"];
 
-        //function
+        bind_3(easeArr);
+        render_3();
+
+        function bind_3(dataSet) {
+            var selection_circle = d3.select("svg#bar-chart-4")
+                .selectAll("circle")
+                .data(dataSet);
+
+            var selection_text = d3.select("svg#bar-chart-4")
+                .selectAll("text")
+                .data(dataSet);
+
+            var selection_line = d3.select("svg#bar-chart-4")
+                .selectAll("line")
+                .data(dataSet);
+
+            selection_line.enter().append("line")
+                .attr({
+                    x1: 120,
+                    y1: function(d, i) {
+                        return 30 + i * 35;
+                    },
+                    x2: 300,
+                    y2: function(d, i) {
+                        return 30 + i * 35;
+                    },
+                    stroke: "lightgreen"
+                }).text(function(d) {
+                    return d;
+                });
+            selection_line.exit().remove();
+
+            selection_circle.enter().append("circle")
+                .attr({
+                    cx: 120,
+                    cy: function(d, i) {
+                        return 30 + i * 35;
+                    },
+                    r: 15,
+                    fill: "gold"
+                });
+            selection_circle.exit().remove();
+
+            selection_text.enter().append("text")
+                .attr({
+                    x: 20,
+                    y: function(d, i) {
+                        return 35 + i * 35;
+                    },
+                    fill: "black"
+                }).text(function(d) {
+                    return d;
+                });
+            selection_text.exit().remove();
+
+        }
+
+        function render_3() {
+
+            //需要動畫的設定
+            d3.select("svg#bar-chart-4")
+                .selectAll("circle")
+                .on("click", function(d) {
+                    var pos_c = d3.select(this).attr("cx");
+                    var new_pos_c = 0;
+
+                    if (pos_c == 300) {
+                        new_pos_c = 120;
+                    } else {
+                        new_pos_c = 300;
+                    }
+
+                    d3.select(this)
+                        .transition()
+                        .ease(d)
+                        .attr("cx", new_pos_c);
+                });
+
+        }
+
+        //function====================================================================================
         function svg(w, h, sid) {
 
             d3.select("body")
